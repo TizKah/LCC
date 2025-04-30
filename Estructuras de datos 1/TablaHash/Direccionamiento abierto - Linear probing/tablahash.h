@@ -53,6 +53,6 @@ void *tablahash_buscar(TablaHash tabla, void *dato);
 /**
  * Elimina el dato de la tabla que coincida con el dato dado.
  */
-void tablahash_eliminar(TablaHash tabla, void *dato);
+int tablahash_eliminar(TablaHash tabla, void *dato);
 
 #endif /* __TABLAHASH_H__ */

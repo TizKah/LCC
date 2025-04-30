@@ -131,6 +131,7 @@ void colision_manage(TablaHash tabla, int idx, void *dato){
   if(tabla->elems[idx].dato && tabla->comp(tabla->elems[idx].dato,dato)==0){
     tabla->destr(tabla->elems[idx].dato);
     tabla->elems[idx].dato = tabla->copia(dato);
+    tabla->elems[idx].eliminado = 0;
   }
   // Si existe una casilla eliminada en el cluster    
   else if(tabla->elems[first_deleted].eliminado){
@@ -142,9 +143,9 @@ void colision_manage(TablaHash tabla, int idx, void *dato){
   else{
     tabla->numElems++;
     tabla->elems[idx].dato = tabla->copia(dato);
+    tabla->elems[idx].eliminado = 0;
   }
   
-  tabla->elems[idx].eliminado = 0;
 }
 
 /**
@@ -158,22 +159,8 @@ void tablahash_insertar(TablaHash tabla, void *dato) {
 
   // Calculamos la posicion del dato dado, de acuerdo a la funcion hash.
   unsigned idx = tabla->hash(dato) % tabla->capacidad;
-
-  // Insertar el dato si la casilla estaba libre.
-  if (tabla->elems[idx].dato == NULL) {
-    tabla->numElems++;
-    tabla->elems[idx].dato = tabla->copia(dato);
-    tabla->elems[idx].eliminado = 0;
-  }
-  // Sobrescribir el dato si el mismo ya se encontraba en la tabla.
-  else if (tabla->comp(tabla->elems[idx].dato, dato) == 0) {
-    tabla->destr(tabla->elems[idx].dato);
-    tabla->elems[idx].dato = tabla->copia(dato);
-  }
   // En caso de haber colisiones, haremos el linear probing
-  else {
-    colision_manage(tabla,idx, dato);
-  }
+  colision_manage(tabla,idx, dato);
 }
 
 /**
@@ -185,17 +172,9 @@ void *tablahash_buscar(TablaHash tabla, void *dato) {
   // Calculamos la posicion del dato dado, de acuerdo a la funcion hash.
   unsigned idx = tabla->hash(dato) % tabla->capacidad;
 
-  // Retornar NULL si la casilla estaba vacia.
-  if (tabla->elems[idx].dato == NULL && !tabla->elems[idx].eliminado)
-    return NULL;
-  
-  // Retornar el dato de la casilla si hay concidencia.
-  if (tabla->comp(tabla->elems[idx].dato, dato) == 0)
-    return tabla->elems[idx].dato;
-  
   // Paramos de buscar al encontrar una celda vacía o encontrar el dato.
-  for(;tabla->elems[idx].eliminado && 
-  (tabla->elems[idx].dato && tabla->comp(tabla->elems[idx].dato,dato)!=0);
+  for(;tabla->elems[idx].eliminado || 
+  (tabla->elems[idx].dato && tabla->comp(tabla->elems[idx].dato,dato) != 0);
   idx = (idx + 1) % tabla->capacidad);
     
   if(tabla->elems[idx].dato && tabla->comp(tabla->elems[idx].dato,dato)==0)
@@ -218,7 +197,7 @@ void delete_data(TablaHash tabla, int idx){
 /**
  Elimina el dato de la tabla que coincida con el dato dado.
  */
-void tablahash_eliminar(TablaHash tabla, void *dato) {
+int tablahash_eliminar(TablaHash tabla, void *dato) {
   /* 
     En esta función vamos primero a conseguir el índice del array de elementos en el que 
     debería estar el dato. 
@@ -238,10 +217,11 @@ void tablahash_eliminar(TablaHash tabla, void *dato) {
 
   // Retornar si la casilla estaba vacia.
   if (tabla->elems[idx].dato == NULL && !tabla->elems[idx].eliminado)
-    return;
+    return 0;
   
   if (tabla->comp(tabla->elems[idx].dato, dato) == 0) {
     delete_data(tabla,idx);
+    return 1;
   }
   else{
     for(;tabla->elems[idx].eliminado || 
@@ -250,8 +230,10 @@ void tablahash_eliminar(TablaHash tabla, void *dato) {
     
     if(tabla->elems[idx].dato && tabla->comp(tabla->elems[idx].dato,dato)==0){
       delete_data(tabla,idx);
+      return 1;
     }
   }
+  return 0;
 }
 
 
